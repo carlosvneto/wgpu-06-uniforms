@@ -13,4 +13,4 @@ https://sotrh.github.io/learn-wgpu/beginner/tutorial6-uniforms/#a-perspective-ca
 * Compile and run second proram
 * cargo run --bin wgpu-06-uniforms-challenge
 * Use arrow keys to control camara
-![alt text](https://github.com/carlosvneto/wgpu-04-buffers/blob/main/images/screen.png?raw=true)
+![alt text](https://github.com/carlosvneto/wgpu-06-uniforms/blob/main/images/screen.png?raw=true)
