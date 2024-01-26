@@ -4,7 +4,8 @@ use wgpu::util::DeviceExt;
 use winit::{
     event::*,
     event_loop::EventLoop,
-    window::{Window, WindowBuilder}, keyboard::{PhysicalKey, KeyCode},
+    keyboard::{KeyCode, PhysicalKey},
+    window::{Window, WindowBuilder},
 };
 
 mod texture;
@@ -144,87 +145,118 @@ impl CameraController {
     }
 
     fn process_events(&mut self, event: &WindowEvent) -> bool {
-        
         match event {
-            WindowEvent::KeyboardInput { // up arrow key - move forward
+            WindowEvent::KeyboardInput {
+                // up arrow key - move forward
                 event:
-                KeyEvent {
-                    state,
-                    physical_key: PhysicalKey::Code(KeyCode::ArrowUp),
-                    ..
-                },
+                    KeyEvent {
+                        state,
+                        physical_key: PhysicalKey::Code(KeyCode::ArrowUp),
+                        ..
+                    },
                 ..
-            } => { self.is_forward_pressed = *state == ElementState::Pressed; true }
-         
-            WindowEvent::KeyboardInput { // W key - move forward
-                event:
-                KeyEvent {
-                    state,
-                    physical_key: PhysicalKey::Code(KeyCode::KeyW),
-                    ..
-                },
-                ..
-            } => { self.is_forward_pressed = *state == ElementState::Pressed; true }
-            
-            WindowEvent::KeyboardInput { // down arrow key - move backward
-                event:
-                KeyEvent {
-                    state,
-                    physical_key: PhysicalKey::Code(KeyCode::ArrowDown),
-                    ..
-                },
-                ..
-            } => { self.is_backward_pressed = *state == ElementState::Pressed; true }
-      
-            WindowEvent::KeyboardInput { // S key - move backward
-                event:
-                KeyEvent {
-                    state,
-                    physical_key: PhysicalKey::Code(KeyCode::KeyS),
-                    ..
-                },
-                ..
-            } => { self.is_backward_pressed = *state == ElementState::Pressed; true }
-          
-            WindowEvent::KeyboardInput { // right arrow key
-                event:
-                KeyEvent {
-                    state,
-                    physical_key: PhysicalKey::Code(KeyCode::ArrowRight),
-                    ..
-                },
-                ..
-            } => { self.is_right_pressed = *state == ElementState::Pressed; true }
+            } => {
+                self.is_forward_pressed = *state == ElementState::Pressed;
+                true
+            }
 
-            WindowEvent::KeyboardInput { // D key - move right
+            WindowEvent::KeyboardInput {
+                // W key - move forward
                 event:
-                KeyEvent {
-                    state,
-                    physical_key: PhysicalKey::Code(KeyCode::KeyD),
-                    ..
-                },
+                    KeyEvent {
+                        state,
+                        physical_key: PhysicalKey::Code(KeyCode::KeyW),
+                        ..
+                    },
                 ..
-            } => { self.is_right_pressed = *state == ElementState::Pressed; true }
+            } => {
+                self.is_forward_pressed = *state == ElementState::Pressed;
+                true
+            }
 
-            WindowEvent::KeyboardInput { // left arrow key
+            WindowEvent::KeyboardInput {
+                // down arrow key - move backward
                 event:
-                KeyEvent {
-                    state,
-                    physical_key: PhysicalKey::Code(KeyCode::ArrowLeft),
-                    ..
-                },
+                    KeyEvent {
+                        state,
+                        physical_key: PhysicalKey::Code(KeyCode::ArrowDown),
+                        ..
+                    },
                 ..
-            } => { self.is_left_pressed = *state == ElementState::Pressed; true }
-   
-            WindowEvent::KeyboardInput { // A key - move left
+            } => {
+                self.is_backward_pressed = *state == ElementState::Pressed;
+                true
+            }
+
+            WindowEvent::KeyboardInput {
+                // S key - move backward
                 event:
-                KeyEvent {
-                    state,
-                    physical_key: PhysicalKey::Code(KeyCode::KeyA),
-                    ..
-                },
+                    KeyEvent {
+                        state,
+                        physical_key: PhysicalKey::Code(KeyCode::KeyS),
+                        ..
+                    },
                 ..
-            } => { self.is_left_pressed = *state == ElementState::Pressed; true }
+            } => {
+                self.is_backward_pressed = *state == ElementState::Pressed;
+                true
+            }
+
+            WindowEvent::KeyboardInput {
+                // right arrow key
+                event:
+                    KeyEvent {
+                        state,
+                        physical_key: PhysicalKey::Code(KeyCode::ArrowRight),
+                        ..
+                    },
+                ..
+            } => {
+                self.is_right_pressed = *state == ElementState::Pressed;
+                true
+            }
+
+            WindowEvent::KeyboardInput {
+                // D key - move right
+                event:
+                    KeyEvent {
+                        state,
+                        physical_key: PhysicalKey::Code(KeyCode::KeyD),
+                        ..
+                    },
+                ..
+            } => {
+                self.is_right_pressed = *state == ElementState::Pressed;
+                true
+            }
+
+            WindowEvent::KeyboardInput {
+                // left arrow key
+                event:
+                    KeyEvent {
+                        state,
+                        physical_key: PhysicalKey::Code(KeyCode::ArrowLeft),
+                        ..
+                    },
+                ..
+            } => {
+                self.is_left_pressed = *state == ElementState::Pressed;
+                true
+            }
+
+            WindowEvent::KeyboardInput {
+                // A key - move left
+                event:
+                    KeyEvent {
+                        state,
+                        physical_key: PhysicalKey::Code(KeyCode::KeyA),
+                        ..
+                    },
+                ..
+            } => {
+                self.is_left_pressed = *state == ElementState::Pressed;
+                true
+            }
 
             _ => false,
         }
@@ -336,13 +368,15 @@ impl<'a> State<'a> {
             height: size.height,
             present_mode: surface_caps.present_modes[0],
             alpha_mode: surface_caps.alpha_modes[0],
-            desired_maximum_frame_latency: 2, view_formats: vec![],
+            desired_maximum_frame_latency: 2,
+            view_formats: vec![],
         };
         surface.configure(&device, &config);
 
         let diffuse_bytes = include_bytes!("holy-spirit-03.png");
         let diffuse_texture =
-            texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "holy-spirit-03.png").unwrap();
+            texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "holy-spirit-03.png")
+                .unwrap();
 
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -611,52 +645,56 @@ async fn run() {
     // State::new uses async code, so we're going to wait for it to finish
     let mut state = State::new(&window).await;
 
-    event_loop.run(move |event, control_flow| {
-        match event {
-            Event::WindowEvent {
-                ref event,
-                window_id,
-            } if window_id == state.window().id() => {
-                if !state.input(event) {
-                    match event {
-                        WindowEvent::CloseRequested
-                        | WindowEvent::KeyboardInput {
-                            event:
-                                KeyEvent {
-                                    state: ElementState::Pressed,
-                                    physical_key: PhysicalKey::Code(KeyCode::Escape),
-                                    ..
-                                },
-                            ..
-                        } => control_flow.exit(),
-                        WindowEvent::Resized(physical_size) => {
-                            state.resize(*physical_size);
-                        }
-                        WindowEvent::RedrawRequested => {
-                            // This tells winit that we want another frame after this one
-                            state.window().request_redraw();
-                            state.update();
-                            match state.render() {
-                                Ok(_) => {}
-                                // Reconfigure the surface if it's lost or outdated
-                                Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
-                                    state.resize(state.size)
-                                }
-                                // The system is out of memory, we should probably quit
-                                Err(wgpu::SurfaceError::OutOfMemory) => {
-                                    log::error!("OutOfMemory");
-                                    control_flow.exit();
-                                }
-
-                                // This happens when the a frame takes too long to present
-                                Err(wgpu::SurfaceError::Timeout) => log::warn!("Surface timeout"),
+    event_loop
+        .run(move |event, control_flow| {
+            match event {
+                Event::WindowEvent {
+                    ref event,
+                    window_id,
+                } if window_id == state.window().id() => {
+                    if !state.input(event) {
+                        match event {
+                            WindowEvent::CloseRequested
+                            | WindowEvent::KeyboardInput {
+                                event:
+                                    KeyEvent {
+                                        state: ElementState::Pressed,
+                                        physical_key: PhysicalKey::Code(KeyCode::Escape),
+                                        ..
+                                    },
+                                ..
+                            } => control_flow.exit(),
+                            WindowEvent::Resized(physical_size) => {
+                                state.resize(*physical_size);
                             }
+                            WindowEvent::RedrawRequested => {
+                                // This tells winit that we want another frame after this one
+                                state.window().request_redraw();
+                                state.update();
+                                match state.render() {
+                                    Ok(_) => {}
+                                    // Reconfigure the surface if it's lost or outdated
+                                    Err(
+                                        wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated,
+                                    ) => state.resize(state.size),
+                                    // The system is out of memory, we should probably quit
+                                    Err(wgpu::SurfaceError::OutOfMemory) => {
+                                        log::error!("OutOfMemory");
+                                        control_flow.exit();
+                                    }
+
+                                    // This happens when the a frame takes too long to present
+                                    Err(wgpu::SurfaceError::Timeout) => {
+                                        log::warn!("Surface timeout")
+                                    }
+                                }
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
                 }
+                _ => {}
             }
-        _ => {}
-        }
-    }).unwrap();
+        })
+        .unwrap();
 }
