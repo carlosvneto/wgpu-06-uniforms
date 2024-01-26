@@ -3,8 +3,8 @@ use std::iter;
 use wgpu::util::DeviceExt;
 use winit::{
     event::*,
-    event_loop::{ControlFlow, EventLoop},
-    window::{Window, WindowBuilder},
+    event_loop::EventLoop,
+    window::{Window, WindowBuilder}, keyboard::{PhysicalKey, KeyCode},
 };
 
 mod texture;
@@ -144,37 +144,88 @@ impl CameraController {
     }
 
     fn process_events(&mut self, event: &WindowEvent) -> bool {
+        
         match event {
-            WindowEvent::KeyboardInput {
-                input:
-                    KeyboardInput {
-                        state,
-                        virtual_keycode: Some(keycode),
-                        ..
-                    },
+            WindowEvent::KeyboardInput { // up arrow key - move forward
+                event:
+                KeyEvent {
+                    state,
+                    physical_key: PhysicalKey::Code(KeyCode::ArrowUp),
+                    ..
+                },
                 ..
-            } => {
-                let is_pressed = *state == ElementState::Pressed;
-                match keycode {
-                    VirtualKeyCode::W | VirtualKeyCode::Up => {
-                        self.is_forward_pressed = is_pressed;
-                        true
-                    }
-                    VirtualKeyCode::A | VirtualKeyCode::Left => {
-                        self.is_left_pressed = is_pressed;
-                        true
-                    }
-                    VirtualKeyCode::S | VirtualKeyCode::Down => {
-                        self.is_backward_pressed = is_pressed;
-                        true
-                    }
-                    VirtualKeyCode::D | VirtualKeyCode::Right => {
-                        self.is_right_pressed = is_pressed;
-                        true
-                    }
-                    _ => false,
-                }
-            }
+            } => { self.is_forward_pressed = *state == ElementState::Pressed; true }
+         
+            WindowEvent::KeyboardInput { // W key - move forward
+                event:
+                KeyEvent {
+                    state,
+                    physical_key: PhysicalKey::Code(KeyCode::KeyW),
+                    ..
+                },
+                ..
+            } => { self.is_forward_pressed = *state == ElementState::Pressed; true }
+            
+            WindowEvent::KeyboardInput { // down arrow key - move backward
+                event:
+                KeyEvent {
+                    state,
+                    physical_key: PhysicalKey::Code(KeyCode::ArrowDown),
+                    ..
+                },
+                ..
+            } => { self.is_backward_pressed = *state == ElementState::Pressed; true }
+      
+            WindowEvent::KeyboardInput { // S key - move backward
+                event:
+                KeyEvent {
+                    state,
+                    physical_key: PhysicalKey::Code(KeyCode::KeyS),
+                    ..
+                },
+                ..
+            } => { self.is_backward_pressed = *state == ElementState::Pressed; true }
+          
+            WindowEvent::KeyboardInput { // right arrow key
+                event:
+                KeyEvent {
+                    state,
+                    physical_key: PhysicalKey::Code(KeyCode::ArrowRight),
+                    ..
+                },
+                ..
+            } => { self.is_right_pressed = *state == ElementState::Pressed; true }
+
+            WindowEvent::KeyboardInput { // D key - move right
+                event:
+                KeyEvent {
+                    state,
+                    physical_key: PhysicalKey::Code(KeyCode::KeyD),
+                    ..
+                },
+                ..
+            } => { self.is_right_pressed = *state == ElementState::Pressed; true }
+
+            WindowEvent::KeyboardInput { // left arrow key
+                event:
+                KeyEvent {
+                    state,
+                    physical_key: PhysicalKey::Code(KeyCode::ArrowLeft),
+                    ..
+                },
+                ..
+            } => { self.is_left_pressed = *state == ElementState::Pressed; true }
+   
+            WindowEvent::KeyboardInput { // A key - move left
+                event:
+                KeyEvent {
+                    state,
+                    physical_key: PhysicalKey::Code(KeyCode::KeyA),
+                    ..
+                },
+                ..
+            } => { self.is_left_pressed = *state == ElementState::Pressed; true }
+
             _ => false,
         }
     }
@@ -212,8 +263,8 @@ impl CameraController {
     }
 }
 
-struct State {
-    surface: wgpu::Surface,
+struct State<'a> {
+    surface: wgpu::Surface<'a>,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
@@ -221,8 +272,7 @@ struct State {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
-    #[allow(dead_code)]
-    diffuse_texture: texture::Texture,
+    //diffuse_texture: texture::Texture,
     diffuse_bind_group: wgpu::BindGroup,
     camera_controller: CameraController,
     camera_uniform: CameraUniform,
@@ -230,11 +280,11 @@ struct State {
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
     size: winit::dpi::PhysicalSize<u32>,
-    window: Window,
+    window: &'a Window,
 }
 
-impl State {
-    async fn new(window: Window) -> Self {
+impl<'a> State<'a> {
+    async fn new(window: &'a Window) -> State<'a> {
         let size = window.inner_size();
 
         // The instance is a handle to our GPU
@@ -244,11 +294,8 @@ impl State {
             ..Default::default()
         });
 
-        // # Safety
-        //
         // The surface needs to live as long as the window that created it.
-        // State owns the window so this should be safe.
-        let surface = unsafe { instance.create_surface(&window) }.unwrap();
+        let surface = instance.create_surface(window).unwrap();
 
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -262,10 +309,10 @@ impl State {
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: None,
-                    features: wgpu::Features::empty(),
+                    required_features: wgpu::Features::empty(),
                     // WebGL doesn't support all of wgpu's features, so if
                     // we're building for the web we'll have to disable some.
-                    limits: wgpu::Limits::default(),
+                    required_limits: wgpu::Limits::default(),
                 },
                 None, // Trace path
             )
@@ -289,7 +336,7 @@ impl State {
             height: size.height,
             present_mode: surface_caps.present_modes[0],
             alpha_mode: surface_caps.alpha_modes[0],
-            view_formats: vec![],
+            desired_maximum_frame_latency: 2, view_formats: vec![],
         };
         surface.configure(&device, &config);
 
@@ -416,7 +463,7 @@ impl State {
                 topology: wgpu::PrimitiveTopology::TriangleList,
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
+                cull_mode: None, // Some(wgpu::Face::Back),
                 // Setting this to anything other than Fill requires Features::POLYGON_MODE_LINE
                 // or Features::POLYGON_MODE_POINT
                 polygon_mode: wgpu::PolygonMode::Fill,
@@ -457,7 +504,7 @@ impl State {
             vertex_buffer,
             index_buffer,
             num_indices,
-            diffuse_texture,
+            //diffuse_texture,
             diffuse_bind_group,
             camera_controller,
             camera_staging,
@@ -555,16 +602,16 @@ fn main() {
 
 async fn run() {
     env_logger::init();
-    let event_loop = EventLoop::new();
+    let event_loop = EventLoop::new().unwrap();
     let window = WindowBuilder::new()
         .with_title("wGPU Uniforms Challenge - use arrow keys")
         .build(&event_loop)
         .unwrap();
 
     // State::new uses async code, so we're going to wait for it to finish
-    let mut state = State::new(window).await;
+    let mut state = State::new(&window).await;
 
-    event_loop.run(move |event, _, control_flow| {
+    event_loop.run(move |event, control_flow| {
         match event {
             Event::WindowEvent {
                 ref event,
@@ -574,45 +621,42 @@ async fn run() {
                     match event {
                         WindowEvent::CloseRequested
                         | WindowEvent::KeyboardInput {
-                            input:
-                                KeyboardInput {
+                            event:
+                                KeyEvent {
                                     state: ElementState::Pressed,
-                                    virtual_keycode: Some(VirtualKeyCode::Escape),
+                                    physical_key: PhysicalKey::Code(KeyCode::Escape),
                                     ..
                                 },
                             ..
-                        } => *control_flow = ControlFlow::Exit,
+                        } => control_flow.exit(),
                         WindowEvent::Resized(physical_size) => {
                             state.resize(*physical_size);
                         }
-                        WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                            // new_inner_size is &mut so w have to dereference it twice
-                            state.resize(**new_inner_size);
+                        WindowEvent::RedrawRequested => {
+                            // This tells winit that we want another frame after this one
+                            state.window().request_redraw();
+                            state.update();
+                            match state.render() {
+                                Ok(_) => {}
+                                // Reconfigure the surface if it's lost or outdated
+                                Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
+                                    state.resize(state.size)
+                                }
+                                // The system is out of memory, we should probably quit
+                                Err(wgpu::SurfaceError::OutOfMemory) => {
+                                    log::error!("OutOfMemory");
+                                    control_flow.exit();
+                                }
+
+                                // This happens when the a frame takes too long to present
+                                Err(wgpu::SurfaceError::Timeout) => log::warn!("Surface timeout"),
+                            }
                         }
                         _ => {}
                     }
                 }
             }
-            Event::RedrawRequested(window_id) if window_id == state.window().id() => {
-                state.update();
-                match state.render() {
-                    Ok(_) => {}
-                    // Reconfigure the surface if it's lost or outdated
-                    Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
-                        state.resize(state.size)
-                    }
-                    // The system is out of memory, we should probably quit
-                    Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                    // We're ignoring timeouts
-                    Err(wgpu::SurfaceError::Timeout) => log::warn!("Surface timeout"),
-                }
-            }
-            Event::MainEventsCleared => {
-                // RedrawRequested will only trigger once, unless we manually
-                // request it.
-                state.window().request_redraw();
-            }
-            _ => {}
+        _ => {}
         }
-    });
+    }).unwrap();
 }
