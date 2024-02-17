@@ -4,7 +4,7 @@ use wgpu::util::DeviceExt;
 use winit::{
     event::*,
     event_loop::EventLoop,
-    keyboard::{KeyCode, PhysicalKey},
+    keyboard::{Key, KeyCode, NamedKey, PhysicalKey},
     window::{Window, WindowBuilder},
 };
 
@@ -111,6 +111,8 @@ impl CameraUniform {
 
 struct CameraController {
     speed: f32,
+    is_up_pressed: bool,
+    is_down_pressed: bool,
     is_forward_pressed: bool,
     is_backward_pressed: bool,
     is_left_pressed: bool,
@@ -121,6 +123,8 @@ impl CameraController {
     fn new(speed: f32) -> Self {
         Self {
             speed,
+            is_up_pressed: false,
+            is_down_pressed: false,
             is_forward_pressed: false,
             is_backward_pressed: false,
             is_left_pressed: false,
@@ -131,117 +135,48 @@ impl CameraController {
     fn process_events(&mut self, event: &WindowEvent) -> bool {
         match event {
             WindowEvent::KeyboardInput {
-                // up arrow key - move forward
                 event:
                     KeyEvent {
                         state,
-                        physical_key: PhysicalKey::Code(KeyCode::ArrowUp),
+                        logical_key,
+                        physical_key,
                         ..
                     },
                 ..
             } => {
-                self.is_forward_pressed = *state == ElementState::Pressed;
-                true
+                let is_pressed = *state == ElementState::Pressed;
+                if let Key::Named(NamedKey::Space) = logical_key {
+                    self.is_up_pressed = is_pressed;
+                    return true;
+                }
+                match physical_key {
+                    PhysicalKey::Code(KeyCode::ShiftLeft) => {
+                        self.is_down_pressed = is_pressed;
+                        true
+                    }
+                    // W and up arrow key - move forward
+                    PhysicalKey::Code(KeyCode::KeyW) | PhysicalKey::Code(KeyCode::ArrowUp) => {
+                        self.is_forward_pressed = is_pressed;
+                        true
+                    }
+                    // A and left arrow key - move left
+                    PhysicalKey::Code(KeyCode::KeyA) | PhysicalKey::Code(KeyCode::ArrowLeft) => {
+                        self.is_left_pressed = is_pressed;
+                        true
+                    }
+                    // S and down arrow key - move backward
+                    PhysicalKey::Code(KeyCode::KeyS) | PhysicalKey::Code(KeyCode::ArrowDown) => {
+                        self.is_backward_pressed = is_pressed;
+                        true
+                    }
+                    // D and right arrow key - move right
+                    PhysicalKey::Code(KeyCode::KeyD) | PhysicalKey::Code(KeyCode::ArrowRight) => {
+                        self.is_right_pressed = is_pressed;
+                        true
+                    }
+                    _ => false,
+                }
             }
-
-            WindowEvent::KeyboardInput {
-                // W key - move forward
-                event:
-                    KeyEvent {
-                        state,
-                        physical_key: PhysicalKey::Code(KeyCode::KeyW),
-                        ..
-                    },
-                ..
-            } => {
-                self.is_forward_pressed = *state == ElementState::Pressed;
-                true
-            }
-
-            WindowEvent::KeyboardInput {
-                // down arrow key - move backward
-                event:
-                    KeyEvent {
-                        state,
-                        physical_key: PhysicalKey::Code(KeyCode::ArrowDown),
-                        ..
-                    },
-                ..
-            } => {
-                self.is_backward_pressed = *state == ElementState::Pressed;
-                true
-            }
-
-            WindowEvent::KeyboardInput {
-                // S key - move backward
-                event:
-                    KeyEvent {
-                        state,
-                        physical_key: PhysicalKey::Code(KeyCode::KeyS),
-                        ..
-                    },
-                ..
-            } => {
-                self.is_backward_pressed = *state == ElementState::Pressed;
-                true
-            }
-
-            WindowEvent::KeyboardInput {
-                // right arrow key
-                event:
-                    KeyEvent {
-                        state,
-                        physical_key: PhysicalKey::Code(KeyCode::ArrowRight),
-                        ..
-                    },
-                ..
-            } => {
-                self.is_right_pressed = *state == ElementState::Pressed;
-                true
-            }
-
-            WindowEvent::KeyboardInput {
-                // D key - move right
-                event:
-                    KeyEvent {
-                        state,
-                        physical_key: PhysicalKey::Code(KeyCode::KeyD),
-                        ..
-                    },
-                ..
-            } => {
-                self.is_right_pressed = *state == ElementState::Pressed;
-                true
-            }
-
-            WindowEvent::KeyboardInput {
-                // left arrow key
-                event:
-                    KeyEvent {
-                        state,
-                        physical_key: PhysicalKey::Code(KeyCode::ArrowLeft),
-                        ..
-                    },
-                ..
-            } => {
-                self.is_left_pressed = *state == ElementState::Pressed;
-                true
-            }
-
-            WindowEvent::KeyboardInput {
-                // A key - move left
-                event:
-                    KeyEvent {
-                        state,
-                        physical_key: PhysicalKey::Code(KeyCode::KeyA),
-                        ..
-                    },
-                ..
-            } => {
-                self.is_left_pressed = *state == ElementState::Pressed;
-                true
-            }
-
             _ => false,
         }
     }
