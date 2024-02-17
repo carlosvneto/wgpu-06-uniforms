@@ -10,7 +10,7 @@ https://sotrh.github.io/learn-wgpu/beginner/tutorial6-uniforms/#a-perspective-ca
 * cargo run --bin wgpu-06-uniforms
 * Use arrow keys to control camara
 
-* Compile and run second proram
+* Compile and run second program
 * cargo run --bin wgpu-06-uniforms-challenge
 * Use arrow keys to control camara
 ![alt text](https://github.com/carlosvneto/wgpu-06-uniforms/blob/main/images/screen.png?raw=true)
